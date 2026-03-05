@@ -10,10 +10,6 @@ export default async function handler(req, res) {
 
     const apiKey = process.env.GEMINI_API_KEY;
 
-    if (!apiKey) {
-      return res.status(500).json({ reply: "API key missing" });
-    }
-
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
@@ -38,10 +34,19 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    console.log("Gemini Response:", JSON.stringify(data, null, 2));
+    console.log("Gemini Full Response:", JSON.stringify(data, null, 2));
 
-    const reply =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response";
+    let reply = "No response";
+
+    if (data?.candidates?.length > 0) {
+
+      const parts = data.candidates[0].content.parts;
+
+      if (parts && parts.length > 0) {
+        reply = parts.map(p => p.text || "").join("");
+      }
+
+    }
 
     res.status(200).json({ reply });
 
