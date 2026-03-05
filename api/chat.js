@@ -8,18 +8,10 @@ export default async function handler(req, res) {
 
     const { message } = req.body;
 
-    if (!message) {
-      return res.status(400).json({ reply: "Message is required" });
-    }
-
     const apiKey = process.env.GEMINI_API_KEY;
 
-    if (!apiKey) {
-      return res.status(500).json({ reply: "Gemini API key missing" });
-    }
-
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: {
@@ -30,9 +22,7 @@ export default async function handler(req, res) {
             {
               role: "user",
               parts: [
-                {
-                  text: "Reply in the same language as the user: " + message
-                }
+                { text: "Reply in the same language as the user: " + message }
               ]
             }
           ]
@@ -42,36 +32,18 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    console.log("Gemini Full Response:", JSON.stringify(data, null, 2));
+    console.log("Gemini Full Response:", data);
 
-    // Handle Gemini API errors
-    if (data.error) {
-      return res.status(500).json({
-        reply: "Gemini API error",
-        error: data.error.message
-      });
-    }
+    const reply =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "No response";
 
-    let reply = "No response";
-
-    if (data?.candidates?.length > 0) {
-
-      const parts = data.candidates[0]?.content?.parts;
-
-      if (parts && parts.length > 0) {
-        reply = parts.map(p => p.text || "").join("");
-      }
-
-    }
-
-    return res.status(200).json({ reply });
+    res.status(200).json({ reply });
 
   } catch (error) {
 
-    console.error("Server Error:", error);
-
-    return res.status(500).json({
-      reply: "Server error",
+    res.status(500).json({
+      reply: "Gemini API error",
       error: error.message
     });
 
