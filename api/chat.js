@@ -24,20 +24,25 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           contents: [
             {
+              role: "user",
               parts: [
                 {
                   text: "Reply in the same language as the user: " + message
                 }
               ]
             }
-          ]
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 512
+          }
         })
       }
     );
 
     const data = await response.json();
 
-    console.log("Gemini Full Response:", data);
+    console.log("Gemini Full Response:", JSON.stringify(data, null, 2));
 
     if (data.error) {
       return res.status(500).json({
@@ -47,14 +52,13 @@ export default async function handler(req, res) {
     }
 
     const reply =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "No response";
+      data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response";
 
     res.status(200).json({ reply });
 
   } catch (error) {
 
-    console.error(error);
+    console.error("Server Error:", error);
 
     res.status(500).json({
       reply: "Server error",
